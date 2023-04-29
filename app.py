@@ -10,10 +10,11 @@ mongo = PyMongo(app)
 
 applications = mongo.db.applications
 
-@app.route('/applications', methods=['GET'])
-def get_applications():
+@app.route('/applications/<string:user_id>', methods=['GET'])
+def get_applications(user_id):
+    print(user_id)
     result = []
-    for application in applications.find():
+    for application in applications.find({"userId": user_id}):
         result.append({
             '_id': str(application['_id']),
             'companyName': application['companyName'],
@@ -25,14 +26,17 @@ def get_applications():
 
 @app.route('/applications', methods=['POST'])
 def add_application():
+    application_data = request.get_json()
     new_application = {
-        'companyName': request.json['companyName'],
-        'jobLink': request.json['jobLink'],
-        'position': request.json['position'],
-        'status': request.json['status']
+        'userId': application_data['userId'],
+        'companyName': application_data['companyName'],
+        'jobLink': application_data['jobLink'],
+        'position': application_data['position'],
+        'status': application_data['status']
     }
     applications.insert_one(new_application)
-    return jsonify({'result': 'Application added'})
+    return jsonify({'result': 'Application added'}), 200
+
 
 @app.route('/applications/<id>', methods=['PUT'])
 def update_application(id):
