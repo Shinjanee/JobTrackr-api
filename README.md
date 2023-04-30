@@ -11,9 +11,17 @@ Welcome to JobTrackr, a job application management and resume optimization tool 
 - **Flexible Data Grid**: Effortlessly sort and filter your list of applications for an efficient job search experience.
 - **Submission Limit**: Users are limited to 5 job application submissions within a 2-hour window, allowing for a more focused and efficient job search experience.
 
-### Source Code
+### How to run application
 - React Application : https://github.com/Shinjanee/JobTrackr
+1. Download the application
+2. Run 'npm install'
+3. Run 'npm start'
+
 - Backend : https://github.com/Shinjanee/JobTrackr-api
+1. Download the application
+2. Create database "track_applications" in MongoDB and replace YOUR_MONGO_URI with it in app.py.
+3. Create your API Key on OpenAI and replace YOUR_API_KEY with it in openai_client.py
+4. Run 'python app.py'
 
 ## Video Overview
 
