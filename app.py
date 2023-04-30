@@ -103,11 +103,15 @@ def call_openai_api(user_id):
 
     input_text = request.json.get('inputText')
     message = [
-        {"role":"user", "content": "This is my resume:" + resume_text + ". Do not add any new point, mould existing experience and projects bullet points to fit this job description:" + input_text}
+        {"role":"user", "content": "Make changes to my resume points so that it highlights the skills in job description and make me a strong candidate for the position. \n\nResume:\n" + resume_text + ".\n\n Job description.\n" + input_text}
+    ]
+    final_message = [
+        {"role":"user", "content": "This additional information and skills can be incorporated in my existing resume points, just change it accordingly"}
     ]
     try:
         reply, total_tokens = gpt_client.generate_reply(message)
-        return jsonify({'reply': reply, 'total_tokens': total_tokens}), 200
+        final_reply = gpt_client.generate_reply(final_message)
+        return jsonify({'reply': final_reply, 'total_tokens': total_tokens}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
