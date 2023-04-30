@@ -8,7 +8,7 @@ from openai_client import gpt_client
 
 app = Flask(__name__)
 CORS(app)
-app.config["MONGO_URI"] = "mongodb+srv://shinjanee18:Qwerty123@cluster0.is9eero.mongodb.net/track_applications?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = "YOUR_MONGO_URI"
 mongo = PyMongo(app)
 
 applications = mongo.db.applications

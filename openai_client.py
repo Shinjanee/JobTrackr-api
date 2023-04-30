@@ -3,7 +3,7 @@ import logging
 import openai
 from flask import Flask, jsonify, request
 
-API_KEY_LIST = ['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']
+API_KEY_LIST = ['YOUR_API_KEY']
 
 class GPTClient:
     def __init__(self):
