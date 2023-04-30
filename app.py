@@ -79,7 +79,7 @@ def get_reset_tries(user_id):
         reset_tries(user)
         return jsonify({'tries': user['tries']}), 200
     else:
-        new_user = {'userId': user_id, 'tries': 5, 'last_update': datetime.utcnow()}
+        new_user = {'userId': user_id, 'resumeText':'', 'tries': 5, 'last_update': datetime.utcnow()}
         users.insert_one(new_user)
         return jsonify({'tries': new_user['tries']})
     
@@ -93,17 +93,45 @@ def update_user_tries(user_id):
     users.update_one({'userId': user_id}, {'$set': {'tries': new_tries}})
     return jsonify({'result': 'Tries updated'})
 
-@app.route('/users/openai', methods=['POST'])
-def call_openai_api():
+@app.route('/users/openai/<string:user_id>', methods=['POST'])
+def call_openai_api(user_id):
+    resume_response, status_code = get_resume(user_id)
+    if status_code == 200:
+        resume_text = resume_response.json['resumeText']
+    else:
+        return jsonify({'error': 'Failed to fetch resume'}), 500
+
     input_text = request.json.get('inputText')
     message = [
-        {"role":"user", "content":"give resume points for this job description" + input_text}
+        {"role":"user", "content": "This is my resume:" + resume_text + ". Do not add any new point, mould existing experience and projects bullet points to fit this job description:" + input_text}
     ]
     try:
         reply, total_tokens = gpt_client.generate_reply(message)
         return jsonify({'reply': reply, 'total_tokens': total_tokens}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/users/resume/<string:user_id>', methods=['GET'])
+def get_resume(user_id):
+    user = users.find_one({"userId": user_id})
+    if not user:
+        new_user = {'userId': user_id, 'resumeText': '', 'tries': 5, 'last_update': datetime.utcnow()}
+        users.insert_one(new_user)
+        return jsonify({'resumeText': user['resumeText']}), 200
+    elif user and 'resumeText' in user:
+        return jsonify({'resumeText': user['resumeText']}), 200
+    else:
+        return jsonify({'resumeText': ''}), 200
+
+@app.route('/users/resume/<string:user_id>', methods=['POST'])
+def save_resume(user_id):
+    user = users.find_one({"userId": user_id})
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    resume_text = request.json.get('resumeText')
+    users.update_one({'userId': user_id}, {'$set': {'resumeText': resume_text}})
+    return jsonify({'result': 'Resume saved/updated'})
 
 if __name__ == '__main__':
     app.run(debug=True)

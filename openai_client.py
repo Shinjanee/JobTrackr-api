@@ -11,7 +11,7 @@ class GPTClient:
             "model": "gpt-3.5-turbo",
             "presence_penalty": 1.2,
             "frequency_penalty": 1.2,
-            "temperature": 1.5,
+            "temperature": 0.7,
         }
         self.api_key_list = API_KEY_LIST
         self.ALLOWED_PARAMETERS = {
