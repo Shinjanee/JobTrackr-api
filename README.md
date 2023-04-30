@@ -16,4 +16,6 @@ Welcome to JobTrackr, a job application management and resume optimization tool 
 - Backend : https://github.com/Shinjanee/JobTrackr-api
 
 ## Video Overview
-[![Watch the video overview](https://via.placeholder.com/320x180.png?text=Click+to+watch)](https://shinjanee.github.io/JobTrackr/media/record.mp4)
+
+https://user-images.githubusercontent.com/29971179/235374663-f0fda4c3-6ad2-451c-ae4a-637c106d3b10.mp4
+
