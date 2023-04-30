@@ -67,7 +67,7 @@ def delete_application(id):
 
 def reset_tries(user):
     time_difference = datetime.utcnow() - user['last_update']
-    if time_difference > timedelta(hours=2):
+    if user['tries'] == 0 and time_difference > timedelta(hours=2):
         user['tries'] = 5
         user['last_update'] = datetime.utcnow()
         users.update_one({'userId': user['userId']}, {'$set': {'tries': user['tries'], 'last_update': user['last_update']}})
@@ -103,15 +103,11 @@ def call_openai_api(user_id):
 
     input_text = request.json.get('inputText')
     message = [
-        {"role":"user", "content": "Make changes to my resume points so that it highlights the skills in job description and make me a strong candidate for the position. \n\nResume:\n" + resume_text + ".\n\n Job description.\n" + input_text}
-    ]
-    final_message = [
-        {"role":"user", "content": "This additional information and skills can be incorporated in my existing resume points, just change it accordingly"}
+        {"role":"user", "content": "Is this resume a good fit for the given job description? \n\nResume:\n" + resume_text + ".\n\n Job description.\n" + input_text}
     ]
     try:
         reply, total_tokens = gpt_client.generate_reply(message)
-        final_reply = gpt_client.generate_reply(final_message)
-        return jsonify({'reply': final_reply, 'total_tokens': total_tokens}), 200
+        return jsonify({'reply': reply, 'total_tokens': total_tokens}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
