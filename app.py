@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from flask_cors import CORS
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
@@ -9,10 +10,10 @@ app.config["MONGO_URI"] = "mongodb+srv://shinjanee18:Qwerty123@cluster0.is9eero.
 mongo = PyMongo(app)
 
 applications = mongo.db.applications
+users = mongo.db.users
 
 @app.route('/applications/<string:user_id>', methods=['GET'])
 def get_applications(user_id):
-    print(user_id)
     result = []
     for application in applications.find({"userId": user_id}):
         result.append({
@@ -61,6 +62,35 @@ def delete_application(id):
 
     applications.delete_one({'_id': ObjectId(id)})
     return jsonify({'result': 'Application deleted'})
+
+def reset_tries(user):
+    time_difference = datetime.utcnow() - user['last_update']
+    if time_difference > timedelta(hours=2):
+        user['tries'] = 5
+        user['last_update'] = datetime.utcnow()
+        users.update_one({'userId': user['userId']}, {'$set': {'tries': user['tries'], 'last_update': user['last_update']}})
+
+@app.route('/users/tries/reset/<string:user_id>', methods=['GET'])
+def get_reset_tries(user_id):
+    user = users.find_one({"userId": user_id})
+    if user:
+        reset_tries(user)
+        return jsonify({'tries': user['tries']}), 200
+    else:
+        new_user = {'userId': user_id, 'tries': 5, 'last_update': datetime.utcnow()}
+        users.insert_one(new_user)
+        return jsonify({'tries': new_user['tries']})
+    
+@app.route('/users/tries/<string:user_id>', methods=['PUT'])
+def update_user_tries(user_id):
+    user = users.find_one({"userId": user_id})
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    new_tries = request.json.get('tries')
+    users.update_one({'userId': user_id}, {'$set': {'tries': new_tries}})
+    return jsonify({'result': 'Tries updated'})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
