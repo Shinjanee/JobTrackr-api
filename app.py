@@ -3,6 +3,8 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from flask_cors import CORS
 from datetime import datetime, timedelta
+import requests
+from openai_client import gpt_client
 
 app = Flask(__name__)
 CORS(app)
@@ -91,6 +93,17 @@ def update_user_tries(user_id):
     users.update_one({'userId': user_id}, {'$set': {'tries': new_tries}})
     return jsonify({'result': 'Tries updated'})
 
+@app.route('/users/openai', methods=['POST'])
+def call_openai_api():
+    input_text = request.json.get('inputText')
+    message = [
+        {"role":"user", "content":"give resume points for this job description" + input_text}
+    ]
+    try:
+        reply, total_tokens = gpt_client.generate_reply(message)
+        return jsonify({'reply': reply, 'total_tokens': total_tokens}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
