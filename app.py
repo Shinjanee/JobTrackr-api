@@ -3,7 +3,6 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from flask_cors import CORS
 from datetime import datetime, timedelta
-import requests
 from openai_client import gpt_client
 
 app = Flask(__name__)
@@ -67,7 +66,7 @@ def delete_application(id):
 
 def reset_tries(user):
     time_difference = datetime.utcnow() - user['last_update']
-    if user['tries'] == 0 and time_difference > timedelta(hours=2):
+    if time_difference > timedelta(hours=2):
         user['tries'] = 5
         user['last_update'] = datetime.utcnow()
         users.update_one({'userId': user['userId']}, {'$set': {'tries': user['tries'], 'last_update': user['last_update']}})
@@ -132,6 +131,84 @@ def save_resume(user_id):
     resume_text = request.json.get('resumeText')
     users.update_one({'userId': user_id}, {'$set': {'resumeText': resume_text}})
     return jsonify({'result': 'Resume saved/updated'})
+
+def parse_questions(reply):
+    questions = []
+    lines = reply.split('\n')
+
+    for line in lines:
+        if line.strip() and any(char.isdigit() for char in line):
+            question = ' '.join(line.strip().split()[1:])
+            questions.append(question)
+
+    return questions
+
+def parse_answers(reply):
+    questions = []
+    answers = []
+    lines = reply.split('\n')
+
+    current_question = ""
+    current_answer = ""
+
+    for line in lines:
+        if line.startswith("1.") or line.startswith("2.") or line.startswith("3.") or \
+           line.startswith("4.") or line.startswith("5.") or line.startswith("6.") or \
+           line.startswith("7.") or line.startswith("8.") or line.startswith("9."):
+
+            if current_question and current_answer:
+                questions.append(current_question.strip())
+                answers.append(current_answer.strip())
+
+            current_question = line[3:].strip()
+            current_answer = ""
+        else:
+            current_answer += "\n" + line.strip()
+
+    if current_question and current_answer:
+        questions.append(current_question.strip())
+        answers.append(current_answer.strip())
+
+    return questions, answers
+
+@app.route('/users/openai/questions/<string:user_id>', methods=['POST'])
+def fetch_questions_and_answers(user_id):
+    job_description = request.json.get('jobDescription')
+    resume_response, status_code = get_resume(user_id)
+    if status_code == 200:
+        resume_text = resume_response.json['resumeText']
+    else:
+        return jsonify({'error': 'Failed to fetch resume'}), 500
+
+    # First prompt for generating questions
+    message1 = [
+        {"role": "system", "content": "Pretend you're a hiring manager. Generate a list of role-specific questions I might get based on the following job:"},
+        {"role": "user", "content": job_description}
+    ]
+    
+    try:
+        # Call OpenAI API for the first prompt
+        questions_reply, _ = gpt_client.generate_reply(message1)
+        questions = parse_questions(questions_reply)
+
+        questions_string = '\n'.join([f"- {q}" for q in questions])
+
+        # Second prompt for generating answers
+        message2 = [
+            {"role": "system", "content": f"Now create suggested answers for the following questions using the STAR format based on my resume:\n{questions_string}"},
+            {"role": "user", "content": resume_text}
+        ]
+
+        # Call OpenAI API for the second prompt
+        answers_reply, _ = gpt_client.generate_reply(message2)
+        questions, answers = parse_answers(answers_reply)
+
+        # Combine questions and answers
+        questions_and_answers = [{'question': q, 'answer': a} for q, a in zip(questions, answers)]
+        return jsonify({'questions_and_answers': questions_and_answers}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
