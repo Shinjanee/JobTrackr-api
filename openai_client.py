@@ -2,8 +2,12 @@ import random
 import logging
 import openai
 from flask import Flask, jsonify, request
+from dotenv import load_dotenv
+import os
 
-API_KEY_LIST = ['YOUR_API_KEY']
+load_dotenv()
+
+API_KEY_LIST = [os.getenv("API_KEY")]
 
 class GPTClient:
     def __init__(self):

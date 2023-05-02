@@ -4,10 +4,14 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 from datetime import datetime, timedelta
 from openai_client import gpt_client
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-app.config["MONGO_URI"] = "YOUR_MONGO_URI"
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo = PyMongo(app)
 
 applications = mongo.db.applications
@@ -132,7 +136,7 @@ def save_resume(user_id):
     users.update_one({'userId': user_id}, {'$set': {'resumeText': resume_text}})
     return jsonify({'result': 'Resume saved/updated'})
 
-def parse_questions(reply):
+def parse_questions(reply): 
     questions = []
     lines = reply.split('\n')
 
