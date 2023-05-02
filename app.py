@@ -4,6 +4,7 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 from datetime import datetime, timedelta
 from openai_client import gpt_client
+from openai_client import API_KEY_LIST
 from dotenv import load_dotenv
 import os
 
@@ -12,6 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
+app.config["API_KEY_LIST"] = API_KEY_LIST
 mongo = PyMongo(app)
 
 applications = mongo.db.applications
